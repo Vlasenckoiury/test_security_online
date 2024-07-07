@@ -1,33 +1,47 @@
-from rest_framework import status
+from rest_framework_simplejwt.views import TokenObtainPairView
+from . import models
+from .serializers import CustomTokenObtainPairSerializer
+from rest_framework import viewsets, permissions
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import UserSerializer, TokenSerializer
-from django.contrib.auth import authenticate
+from rest_framework.decorators import action
+from .models import Task
+from .serializers import TaskSerializer
 
 
-class LoginAPIView(APIView):
-    def post(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
-        user = authenticate(username=username, password=password)
-        if user:
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                'user': UserSerializer(user).data,
-                'tokens': TokenSerializer({'refresh': str(refresh), 'access': str(refresh.access_token)}).data
-            })
+
+class IsCustomer(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.user_type == 'customer'
+
+
+class TaskViewSet(viewsets.ModelViewSet):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    # def get_permissions(self):
+    #     if self.action == 'create':
+    #         self.permission_classes = [IsCustomer]
+    #     return super(TaskViewSet, self).get_permissions()
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.IsAuthenticated()]
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAdminUser()]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.user_type == 'admin':
+            return Task.objects.all()
+        elif user.user_type == 'employee':
+            return Task.objects.filter(models.Q(employee=user) | models.Q(customer=user))
         else:
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Task.objects.filter(customer=user)
 
-
-class LogoutAPIView(APIView):
-    def post(self, request):
-        try:
-            refresh_token = request.data["refresh_token"]
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            return Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"error": "Invalid token or token not provided"}, status=status.HTTP_400_BAD_REQUEST)
+    def perform_create(self, serializer):
+        serializer.save(customer=self.request.user)
