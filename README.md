@@ -1,6 +1,7 @@
 # Сервис по управлению задачми
 
-![alt text]([http://url/to/img.png](https://synergy.ru/assets/upload/news/academy/up0.jpg))
+![image](https://github.com/Vlasenckoiury/test_security_online/assets/143352228/a55c04ee-c1f7-457b-8325-c7d4907842d1)
+
 
 ## Описание
 
