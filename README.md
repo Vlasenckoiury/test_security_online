@@ -1,6 +1,6 @@
 # Сервис по управлению задачми
 
-![Project Logo][https://via.placeholder.com/150](https://synergy.ru/assets/upload/news/academy/up0.jpg)
+[![Project Logo](https://via.placeholder.com/150)](https://synergy.ru/assets/upload/news/academy/up0.jpg)
 
 ## Описание
 
