@@ -4,6 +4,7 @@ from rest_framework_simplejwt.views import TokenRefreshView, TokenObtainPairView
 from rest_framework.routers import DefaultRouter
 from .views import TaskViewSet, EmployeeViewSet
 
+
 router = DefaultRouter()
 router.register(r'tasks', TaskViewSet, basename='task')
 router.register(r'employees', EmployeeViewSet, basename='employee')
