@@ -1,6 +1,6 @@
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import CustomTokenObtainPairSerializer, EmployeeSerializer
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from .models import *
@@ -62,6 +62,20 @@ class TaskViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(customer=self.request.user)
 
+    def perform_update(self, serializer):
+        instance = serializer.instance
+        if 'report' in serializer.validated_data and instance.employee != self.request.user:
+            raise serializers.ValidationError("Вы не можете изменять отчет, так как вы не назначили эту задачу.")
+
+        if instance.status == 'completed' and 'report' in serializer.validated_data:
+            raise serializers.ValidationError("Отчет не может быть изменен после закрытия задачи.")
+
+        if 'report' in serializer.validated_data and instance.status != 'completed':
+            instance.status = 'completed'
+            instance.closed_at = timezone.now()
+
+        serializer.save()
+
     @action(detail=True, methods=['patch'], permission_classes=[IsEmployee])
     def assign(self, request, pk=None):
         task = self.get_object()
@@ -77,10 +91,11 @@ class TaskViewSet(viewsets.ModelViewSet):
         task = self.get_object()
         if task.employee != request.user:
             return Response({'error': 'Только назначенный сотрудник может закрыть задачу.'}, status=status.HTTP_403_FORBIDDEN)
-        if task.status == 'done':
+        if task.status == 'completed':
             return Response({'error': 'Задача уже закрыта.'}, status=status.HTTP_400_BAD_REQUEST)
-        task.status = 'done'
+        task.status = 'completed'
         task.closed_at = timezone.now()
+        task.save()
         task.report = request.data.get('report', '')
         if not task.report:
             return Response({'error': 'Отчет не может быть пустым при закрытии задачи.'}, status=status.HTTP_400_BAD_REQUEST)
