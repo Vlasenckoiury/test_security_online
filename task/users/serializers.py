@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import CustomUser, Task
@@ -21,25 +22,20 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 
-# class TaskSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Task
-#         fields = '__all__'
-#
-#     def validate(self, data):
-#         if data.get('status') == 'completed' and not data.get('report'):
-#             raise serializers.ValidationError("Отчет не может быть пустым при закрытии задачи.")
-#         return data
+User = get_user_model()
+
 
 class TaskSerializer(serializers.ModelSerializer):
+    customer = serializers.ReadOnlyField(source='customer.username')
+    employee = serializers.SlugRelatedField(slug_field='username', queryset=User.objects.all(), allow_null=True, required=False)
+
     class Meta:
         model = Task
         fields = ['id', 'customer', 'employee', 'title', 'description', 'status', 'created_at', 'updated_at', 'closed_at', 'report']
-        read_only_fields = ['id', 'customer', 'created_at', 'updated_at', 'closed_at', 'status']
+        read_only_fields = ['id', 'customer', 'created_at', 'updated_at', 'closed_at', 'employee']
 
-    def validate(self, data):
-        if self.instance and self.instance.status == 'completed' and data.get('status') != 'completed':
-            raise serializers.ValidationError("Задача выполнена и не может быть отредактирована.")
-        if data.get('status') == 'completed' and not data.get('report'):
-            raise serializers.ValidationError("Отчет не может быть пустым при закрытии задачи.")
-        return data
+
+class EmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'full_name', 'email', 'phone']

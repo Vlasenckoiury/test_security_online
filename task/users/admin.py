@@ -6,7 +6,7 @@ from .models import CustomUser, Task
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
     model = CustomUser
-    list_display = ['username', 'full_name', 'email', 'phone', 'user_type']
+    list_display = ['id', 'username', 'full_name', 'email', 'phone', 'user_type']
 
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
