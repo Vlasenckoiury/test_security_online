@@ -4,7 +4,7 @@ from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from .models import *
-from .serializers import TaskSerializer
+from .serializers import *
 from rest_framework.exceptions import PermissionDenied
 from .permissions import IsCustomerOrReadOnly, IsCustomer, IsEmployee, IsCustomerOrEmployee
 from django.contrib.auth import get_user_model
@@ -97,3 +97,27 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         if user.user_type == 'customer':
             return self.queryset.filter(user_type='employee')
         return self.queryset.none()
+
+
+class CustomUserViewSet(viewsets.ModelViewSet):
+    queryset = CustomUser.objects.all()
+    serializer_class = CustomUserSerializer
+
+    def get_permissions(self):
+        if self.action in ['update_photo']:
+            return [permissions.IsAuthenticated()]
+        return super().get_permissions()
+
+    @action(detail=True, methods=['post'], url_path='upload-photo')
+    def update_photo(self, request, pk=None):
+        user = self.get_object()
+        if request.user.user_type != 'employee':
+            return Response({"detail": "Только сотрудники могут загружать фото."}, status=403)
+
+        photo = request.FILES.get('photo', None)
+        if not photo:
+            return Response({"detail": "Фото не предоставлено."}, status=400)
+
+        user.photo = photo
+        user.save()
+        return Response({"detail": "Фото обновлено успешно."}, status=200)

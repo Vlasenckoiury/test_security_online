@@ -24,18 +24,17 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 
-# class CustomUserSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = CustomUser
-#         fields = ['username', 'email', 'password', 'photo']
-#         extra_kwargs = {
-#             'password': {'write_only': True},
-#             'photo': {'required': True}
-#         }
+class CustomUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'full_name', 'email', 'phone', 'user_type', 'photo']
+        read_only_fields = ['user_type']  # роль только на чтение
 
-    # def create(self, validated_data):
-    #     user = CustomUser.objects.create_user(**validated_data)
-    #     return user
+    def update(self, instance, validated_data):
+        request = self.context.get('request', None)
+        if request and request.user.user_type != 'employee' and 'photo' in validated_data:
+            raise serializers.ValidationError("Только сотрудники могут загружать фото.")
+        return super().update(instance, validated_data)
 
 
 class TaskSerializer(serializers.ModelSerializer):
