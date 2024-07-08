@@ -1,6 +1,6 @@
 # Сервис по управлению задачми
 
-![Project Logo](users/photos/111.png)
+![alt text]([http://url/to/img.png](https://synergy.ru/assets/upload/news/academy/up0.jpg))
 
 ## Описание
 
