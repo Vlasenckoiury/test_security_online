@@ -23,9 +23,34 @@ class IsCustomerOrReadOnly(permissions.BasePermission):
         return False
 
 
+# class IsCustomer(permissions.BasePermission):
+#     """
+#     Разрешение на доступ только для пользователей с ролью 'customer'.
+#     """
+#     def has_permission(self, request, view):
+#         return request.user.is_authenticated and request.user.user_type == 'customer'
+
+
+class IsCustomerOrEmployee(permissions.BasePermission):
+    """
+    Разрешение для заказчиков и сотрудников.
+    """
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and (request.user.user_type == 'customer' or request.user.user_type == 'employee')
+
+
 class IsCustomer(permissions.BasePermission):
     """
-    Разрешение на доступ только для пользователей с ролью 'customer'.
+    Разрешение для заказчиков.
     """
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.user_type == 'customer'
+
+
+class IsEmployee(permissions.BasePermission):
+    """
+    Разрешение для сотрудников.
+    """
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.user_type == 'employee'
+
