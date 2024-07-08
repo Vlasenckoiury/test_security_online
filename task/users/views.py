@@ -17,26 +17,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
-class TaskViewSet(viewsets.ModelViewSet):
-    serializer_class = TaskSerializer
-    permission_classes = [permissions.IsAuthenticated, IsCustomerOrReadOnly]
-
-    def get_queryset(self):
-        user = self.request.user
-        if user.user_type == 'customer':
-            return Task.objects.filter(customer=user)
-        elif user.user_type == 'employee':
-            return Task.objects.all()
-        return Task.objects.none()
-
-    def perform_create(self, serializers):
-        user = self.request.user
-        if user.user_type == 'customer':
-            serializers.save(customer=user)
-        else:
-            raise PermissionDenied("Только заказчики могут создавать задачи.")
-
-
 class EmployeeViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = User.objects.filter(user_type='employee')
     serializer_class = EmployeeSerializer
@@ -49,7 +29,7 @@ class EmployeeViewSet(viewsets.ReadOnlyModelViewSet):
 class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
-    permission_classes = [IsCustomerOrEmployee]
+    permission_classes = [IsCustomerOrEmployee, permissions.IsAuthenticated, IsCustomerOrReadOnly]
 
     def get_queryset(self):
         user = self.request.user
@@ -59,8 +39,12 @@ class TaskViewSet(viewsets.ModelViewSet):
             return self.queryset
         return self.queryset.none()
 
-    def perform_create(self, serializer):
-        serializer.save(customer=self.request.user)
+    def perform_create(self, serializers):
+        user = self.request.user
+        if user.user_type == 'customer':
+            serializers.save(customer=user)
+        else:
+            raise PermissionDenied("Только заказчики могут создавать задачи.")
 
     def perform_update(self, serializer):
         instance = serializer.instance
